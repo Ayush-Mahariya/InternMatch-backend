@@ -3,10 +3,206 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const OTP = require('../models/OTP');
+const PasswordResetToken = require('../models/PasswordResetToken');
 const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 
-const {generateOTP, sendOTPEmail} = require('../utils/emailConfiguration');
+const {generateOTP, sendOTPEmail, sendPasswordResetEmail} = require('../utils/emailConfiguration');
+
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'No account with that email address exists' });
+    }
+
+    // Check if email is verified (optional - you can remove this if not needed)
+    if (!user.isVerified) {
+      return res.status(400).json({ 
+        message: 'Please verify your email first before resetting password',
+        needsVerification: true,
+        email: user.email 
+      });
+    }
+
+    // Rate limiting check - prevent multiple requests
+    const recentToken = await PasswordResetToken.findOne({
+      userId: user._id,
+      createdAt: { $gte: new Date(Date.now() - 60000) } // 1 minute ago
+    });
+
+    if (recentToken) {
+      return res.status(429).json({ 
+        message: 'Please wait 1 minute before requesting another password reset' 
+      });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+    // Remove any existing reset tokens for this user
+    await PasswordResetToken.deleteMany({ userId: user._id });
+
+    // Create new reset token
+    const tokenDoc = new PasswordResetToken({
+      userId: user._id,
+      token: hashedToken
+    });
+    await tokenDoc.save();
+
+    // Send email
+    await sendPasswordResetEmail(email, resetToken, user.name, user._id);
+
+    res.json({ 
+      message: 'Password reset link sent to your email',
+      email: email
+    });
+
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Verify password reset token
+router.get('/verify-reset-token/:token/:userId', async (req, res) => {
+  try {
+    const { token, userId } = req.params;
+
+    if (!token || !userId) {
+      return res.status(400).json({ message: 'Token and user ID are required' });
+    }
+
+    // Hash the token to compare with stored hash
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Find token in database
+    const tokenDoc = await PasswordResetToken.findOne({
+      userId: userId,
+      token: hashedToken
+    });
+
+    if (!tokenDoc) {
+      return res.status(400).json({ 
+        message: 'Invalid or expired password reset token',
+        expired: true 
+      });
+    }
+
+    // Find user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ 
+      message: 'Token is valid',
+      valid: true,
+      email: user.email 
+    });
+
+  } catch (error) {
+    console.error('Token verification error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Reset password with token
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, userId, newPassword } = req.body;
+
+    if (!token || !userId || !newPassword) {
+      return res.status(400).json({ message: 'Token, user ID, and new password are required' });
+    }
+
+    // Validate password strength (optional)
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+    }
+
+    // Hash the token to compare with stored hash
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Find and verify token
+    const tokenDoc = await PasswordResetToken.findOne({
+      userId: userId,
+      token: hashedToken
+    });
+
+    if (!tokenDoc) {
+      return res.status(400).json({ 
+        message: 'Invalid or expired password reset token',
+        expired: true 
+      });
+    }
+
+    // Find user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update user password
+    user.password = hashedPassword;
+    await user.save();
+
+    // Delete the used reset token
+    await PasswordResetToken.deleteMany({ userId: userId });
+
+    // Send confirmation email
+    try {
+      const confirmationMailOptions = {
+        from: {
+          name: 'InternMatch',
+          address: process.env.EMAIL_USER
+        },
+        to: user.email,
+        subject: 'InternMatch - Password Changed Successfully',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">Password Changed Successfully</h2>
+            <p>Hi ${user.name},</p>
+            <p>Your password has been successfully changed for your InternMatch account.</p>
+            <p>If you did not make this change, please contact our support team immediately.</p>
+            <p>For security reasons, you may want to:</p>
+            <ul>
+              <li>Check your recent account activity</li>
+              <li>Update passwords on other accounts if you used the same password</li>
+              <li>Enable two-factor authentication if available</li>
+            </ul>
+            <hr>
+            <p style="color: #666; font-size: 12px;">© 2025 InternMatch. All rights reserved.</p>
+          </div>
+        `
+      };
+      
+      await transporter.sendMail(confirmationMailOptions);
+    } catch (emailError) {
+      console.error('Confirmation email error:', emailError);
+      // Don't fail the request if confirmation email fails
+    }
+
+    res.json({ 
+      message: 'Password has been reset successfully. You can now login with your new password.' 
+    });
+
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
 
 // Register
 router.post('/register', async (req, res) => {

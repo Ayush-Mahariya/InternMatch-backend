@@ -653,3 +653,79 @@ This documentation provides complete guidance for implementing and using the ema
 [7](https://www.clouddefense.ai/code/javascript/example/jsdoc-to-markdown)
 [8](https://www.docuwriter.ai/posts/api-documentation-templates)
 [9](https://www.reddit.com/r/node/comments/10mrj4i/nodejs_api_documentation/)
+
+# Forgot Password API - Quick Reference
+
+## **API Endpoints**
+
+### 1. Request Password Reset
+```
+POST /api/auth/forgot-password
+```
+**Body:** `{ "email": "user@example.com" }`
+**Response:** `{ "message": "Password reset link sent to your email" }`
+
+### 2. Verify Reset Token
+```
+GET /api/auth/verify-reset-token/:token/:userId
+```
+**Response:** `{ "valid": true, "email": "user@example.com" }`
+
+### 3. Reset Password
+```
+POST /api/auth/reset-password
+```
+**Body:** `{ "token": "abc123", "userId": "64aae479", "newPassword": "newpass123" }`
+**Response:** `{ "message": "Password reset successful" }`
+
+## **Required Schema**
+```javascript
+// Add to server.js
+const passwordResetTokenSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  token: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now, expires: 3600 } // 1 hour expiry
+});
+const PasswordResetToken = mongoose.model('PasswordResetToken', passwordResetTokenSchema);
+```
+
+## **Key Features**
+- ✅ 1-hour token expiry
+- ✅ Rate limiting (1 request/minute)
+- ✅ SHA-256 token hashing
+- ✅ Single-use tokens
+- ✅ Email notifications
+- ✅ Password strength validation
+
+## **Frontend Usage**
+```javascript
+// Request reset
+const requestReset = async (email) => {
+  const response = await fetch('/api/auth/forgot-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  });
+};
+
+// Reset password
+const resetPassword = async (token, userId, newPassword) => {
+  const response = await fetch('/api/auth/reset-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, userId, newPassword })
+  });
+};
+```
+
+## **Environment Variables**
+```env
+CLIENT_URL=http://localhost:3000
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASS=your-app-password
+```
+
+That's the complete forgot password system in a nutshell!
+
+[1](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/92525881/3a18228e-8c28-4673-840d-550711c311a6/server.js)
+[2](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/images/92525881/6eb6371d-bec6-4871-a0cc-aeba6399b312/image.jpg)

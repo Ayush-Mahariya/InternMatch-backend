@@ -17,6 +17,38 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+// Email sending function for password reset
+const sendPasswordResetEmail = async (email, resetToken, name, userId) => {
+  const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}&id=${userId}`;
+  
+  const mailOptions = {
+    from: {
+      name: 'InternMatch',
+      address: process.env.EMAIL_USER
+    },
+    to: email,
+    subject: 'InternMatch - Password Reset Request',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">Password Reset Request</h2>
+        <p>Hi ${name},</p>
+        <p>You requested to reset your password for your InternMatch account.</p>
+        <p>Click the button below to reset your password:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${resetUrl}" style="background-color: #007bff; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a>
+        </div>
+        <p>Or copy and paste this link in your browser:</p>
+        <p style="word-break: break-all; color: #007bff;">${resetUrl}</p>
+        <p><strong>This link will expire in 1 hour.</strong></p>
+        <p>If you didn't request this password reset, please ignore this email. Your password will remain unchanged.</p>
+        <hr>
+        <p style="color: #666; font-size: 12px;">© 2025 InternMatch. All rights reserved.</p>
+      </div>
+    `
+  };
+  return await transporter.sendMail(mailOptions);
+};
+
 // Utility function to generate OTP
 const generateOTP = () => {
   return crypto.randomInt(100000, 999999).toString(); // 6-digit OTP
@@ -47,4 +79,4 @@ const sendOTPEmail = async (email, otp, name) => {
   return await transporter.sendMail(mailOptions);
 };
 
-module.exports = { generateOTP, sendOTPEmail };
+module.exports = { generateOTP, sendOTPEmail, sendPasswordResetEmail };

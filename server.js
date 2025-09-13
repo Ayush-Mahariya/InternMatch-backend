@@ -12,6 +12,7 @@ const applicationRoutes = require('./routes/applications');
 const assessmentRoutes = require('./routes/assessments');
 const uploadRoutes = require('./routes/uploads');
 const analyticsRoutes = require('./routes/analytics');
+const newsletterRoutes = require('./routes/newsletter');
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use('/api/applications', applicationRoutes);
 app.use('/api/assessments', assessmentRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/newsletter', newsletterRoutes);
 
 // Error handling middleware
 app.use((error, req, res, next) => {

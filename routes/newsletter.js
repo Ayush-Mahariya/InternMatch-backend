@@ -1,5 +1,5 @@
 const express = require('express');
-const Newsletter = require('../models/Newsletter');
+const NewsletterSubscriber = require('../models/Newsletter');
 const router = express.Router();
 
 // Backend route: /api/newsletter/subscribe
@@ -32,7 +32,6 @@ router.post('/subscribe', async (req, res) => {
       source: source || 'website',
       status: 'active'
     });
-
     await subscriber.save();
 
     // Optional: Send confirmation email

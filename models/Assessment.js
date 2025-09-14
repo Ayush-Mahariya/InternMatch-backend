@@ -9,6 +9,8 @@ const assessmentSchema = new mongoose.Schema({
     correctAnswer: Number,
     difficulty: { type: String, enum: ['easy', 'medium', 'hard'] }
   }],
+  totalQuestions: Number,
+  questionsForEachTest: {type: Number, default: 20},
   duration: Number, // in minutes
   passingScore: Number,
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },

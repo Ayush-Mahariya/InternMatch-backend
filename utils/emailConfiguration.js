@@ -4,7 +4,7 @@ const crypto = require('crypto');
 
 // Configure nodemailer transporter
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // or your preferred email service
+  // service: 'gmail', // or your preferred email service
   host: 'smtp.gmail.com',
   port: 587,
   secure: false,

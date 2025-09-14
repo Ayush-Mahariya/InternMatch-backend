@@ -14,8 +14,22 @@ const transporter = nodemailer.createTransport({
   },
   tls: {
     rejectUnauthorized: false
+  },
+  connectionTimeout: 60000,
+  greetingTimeout: 30000,
+  socketTimeout: 60000,
+  debug: true,          // Enable for debugging
+  logger: true
+});
+// Add this after creating transporter to verify connection
+transporter.verify((error, success) => {
+  if (error) {
+    console.log('❌ Email configuration error:', error);
+  } else {
+    console.log('✅ Email server is ready to send messages');
   }
 });
+
 
 // Email sending function for password reset
 const sendPasswordResetEmail = async (email, resetToken, name, userId) => {

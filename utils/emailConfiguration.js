@@ -6,8 +6,9 @@ const crypto = require('crypto');
 const transporter = nodemailer.createTransport({
   service: 'gmail', // or your preferred email service
   host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
+  port: 587,
+  secure: false,
+  requireTLS: true,
   auth: {
     user: process.env.EMAIL_USER, // Add to your .env file
     pass: process.env.EMAIL_PASS  // Add app password to your .env file
@@ -17,9 +18,7 @@ const transporter = nodemailer.createTransport({
   },
   connectionTimeout: 60000,
   greetingTimeout: 30000,
-  socketTimeout: 60000,
-  debug: true,          // Enable for debugging
-  logger: true
+  socketTimeout: 60000
 });
 // Add this after creating transporter to verify connection
 transporter.verify((error, success) => {

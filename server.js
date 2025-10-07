@@ -35,6 +35,61 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/newsletter', newsletterRoutes);
 
+// Add to server.js after your existing routes
+app.get('/test-firebase', async (req, res) => {
+  try {
+    const { auth } = require('./config/firebase');
+    
+    // Test Firebase connection
+    const listUsers = await auth.listUsers(1);
+    
+    res.json({
+      success: true,
+      message: '🔥 Firebase connected successfully!',
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      usersCount: listUsers.users.length,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Firebase test failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      code: error.code
+    });
+  }
+});
+
+
+// // Add this test route to your server.js
+// app.get('/test-verified-sender', async (req, res) => {
+//   try {
+//     const { sendOTPEmail } = require('./utils/emailConfiguration');
+    
+//     console.log('🧪 Testing with verified sender: internmatch.in@gmail.com');
+    
+//     const result = await sendOTPEmail(
+//       'your-test-email@gmail.com', // Replace with your email
+//       '789012',
+//       'Verified Test'
+//     );
+    
+//     res.json({
+//       success: true,
+//       message: 'Email sent successfully with verified sender!',
+//       method: result.method,
+//       sender: 'internmatch.in@gmail.com'
+//     });
+    
+//   } catch (error) {
+//     res.status(500).json({
+//       success: false,
+//       error: error.message
+//     });
+//   }
+// });
+
+
 // Error handling middleware
 app.use((error, req, res, next) => {
   console.error(error);

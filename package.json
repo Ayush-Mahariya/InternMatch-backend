@@ -12,9 +12,10 @@
     "internship",
     "hiring",
     "students",
-    "companies"
+    "companies",
+    "firebase"
   ],
-  "author": "Your Name",
+  "author": "Ayush Mahariya",
   "license": "MIT",
   "dependencies": {
     "axios": "^1.12.2",
@@ -25,13 +26,13 @@
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "express-rate-limit": "^6.10.0",
+    "firebase": "^12.2.1",
+    "firebase-admin": "^13.5.0",
     "helmet": "^7.0.0",
     "joi": "^17.9.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^7.5.0",
     "multer": "^1.4.5-lts.1",
-    "nodemailer": "^6.10.1",
-    "sendmail": "^1.6.1",
     "stripe": "^13.5.0"
   },
   "devDependencies": {

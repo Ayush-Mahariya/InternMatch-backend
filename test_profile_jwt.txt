@@ -10,3 +10,13 @@ Password: InternMatch@123
 category in student model with others
 
 Calendy to schedule interview
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBZEO2NQNlt-Ny4SfIfI6Zd7TnMtAKvP_c",
+  authDomain: "internmatch-auth.firebaseapp.com",
+  projectId: "internmatch-auth",
+  storageBucket: "internmatch-auth.firebasestorage.app",
+  messagingSenderId: "4223581864",
+  appId: "1:4223581864:web:c765a28c908be723010c9d",
+  measurementId: "G-JZ7W0ZNYKR"
+};
